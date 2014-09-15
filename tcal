@@ -1,0 +1,157 @@
+#!/bin/bash
+
+#CONFIG_OPTIONS="rc.verbose:nothing rc.indent.report:7 rc.column.padding:2 rc.color:off"
+#CONFIG_OPTIONS="rc.verbose:label rc.indent.report:7"
+CONFIG_OPTIONS="rc.verbose:nothing rc.indent.report:9"
+
+function showday(){
+  DAY=$1
+  OPTIONS=$2
+  #echo ">$DAY<"
+  EPOCHE=$(gdate -d"${DAY}T00:00:00" "+%s")
+  if [ $EPOCHE -lt $(gdate -d"$(gdate +%F)T00:00:00" +%s) ]
+  then
+    if [ $COLORS -eq 1 ]; then
+      tput setaf 0
+    fi
+    gdate -d"$DAY" "+%m-%d %a"
+    task rc.color:off $CONFIG_OPTIONS sch:$DAY $OPTIONS $TASKW_REPORT
+    if [ $COLORS -eq 1 ]; then
+      tput sgr0
+    fi
+  else
+    DAY_OF_WEEK=$(gdate -d"$DAY" "+%w")
+    if [ "$DAY" = "$(gdate +%F)" ]
+    then
+      if [ $COLORS -eq 1 ]; then
+        tput setaf 2
+        tput bold
+      fi
+      gdate -d"$DAY" "+%m-%d %a"
+      if [ $COLORS -eq 1 ]; then
+        tput sgr0
+      fi
+    elif [ $DAY_OF_WEEK -eq 6 ] || [ $DAY_OF_WEEK -eq 0 ]
+    then
+      if [ $COLORS -eq 1 ]; then
+        tput setaf 1
+      fi
+      gdate -d"$DAY" "+%m-%d %a"
+      if [ $COLORS -eq 1 ]; then
+        tput sgr0
+      fi
+    else
+      if [ $COLORS -eq 1 ]; then
+        tput setaf 2
+      fi
+      gdate -d"$DAY" "+%m-%d %a"
+      if [ $COLORS -eq 1 ]; then
+        tput sgr0
+      fi
+    fi
+    if [ $COLORS -eq 1 ]; then
+      task $CONFIG_OPTIONS sch:$DAY $OPTIONS $TASKW_REPORT
+    else
+      task rc.color:off $CONFIG_OPTIONS sch:$DAY $OPTIONS $TASKW_REPORT
+    fi
+  fi
+}
+
+function showweek(){
+  WEEK=$1
+  OPTIONS=$2
+  echo "Week:  $WEEK"
+  task $CONFIG_OPTIONS week:$WEEK sch: $OPTIONS $TASKW_REPORT
+  WEEK_DAYS=$(days_of_week $WEEK)
+  for DAY in $WEEK_DAYS
+  do
+    showday $DAY $OPTIONS
+  done
+}
+
+OPTIONS=""
+: ${TASKW_REPORT:=todo}
+: ${COLORS:=1}
+
+# example tcal -f -- -1 +w
+PARSED_OPTIONS=""
+while getopts "f" options; do
+  PARSED_OPTIONS="${PARSED_OPTIONS} -${options}${OPTARG}"
+  case $options in
+    f )
+        TASKW_REPORT=finished
+        COLORS=0
+        ;;
+   \? ) 
+        exit 1
+        ;;
+  esac
+done
+shift $(( OPTIND - 1 ));
+
+if [ "$#" -ge 1 ]; then
+  if [ $(echo "$1" | grep "^[0-9]*$") ]; then
+    WEEK=$1
+    shift
+    OPTIONS=$@
+    showweek $WEEK $OPTIONS
+  elif [ $(echo "$1" | grep "^\(+\|-\)[0-9]*$") ]; then
+    CURRENT_WEEK=$(date +%V)
+    WEEK_INCREMENT=$( echo "$1" | sed -e 's/\+//g' -e 's/-//g')
+    WEEK_INCREMENT_SIGN=$( echo "$1" | sed 's/[0-9]*//g' )
+    shift
+    OPTIONS=$@
+    if [ "$WEEK_INCREMENT_SIGN" = "-" ] && [ -n "$WEEK_INCREMENT" ]; then
+      for (( I=$WEEK_INCREMENT; I>0; I-- )); do
+        WEEK=$(( CURRENT_WEEK - I ))
+        showweek $WEEK $OPTIONS
+      done
+    fi
+    showweek $CURRENT_WEEK $OPTIONS
+    if [ "$WEEK_INCREMENT_SIGN" = "+" ] && [ -n "$WEEK_INCREMENT" ]; then
+      for (( I=1; I<=$WEEK_INCREMENT; I++ )); do
+        WEEK=$(( CURRENT_WEEK + I ))
+        showweek $WEEK $OPTIONS
+      done
+    fi
+  elif [ $(echo "$1" | grep "^[0-9]*\(,[0-9]*\)\{1,\}$") ]; then
+    WEEKS=$(echo "$1" | tr ',' '\n')
+    shift
+    OPTIONS=$@
+    for WEEK in $WEEKS
+    do
+      showweek $WEEK $OPTIONS
+    done
+  elif [ $(echo "$1" | grep "^\(+\|-\)[0-9]*\(,\(+\|-\)[0-9]*\)\{1,\}$") ]; then
+    WEEK_INCREMENTS=$(echo "$1" | tr ',' '\n')
+    shift
+    OPTIONS=$@
+    CURRENT_WEEK=$(date +%V)
+    for INCREMENT in $WEEK_INCREMENTS
+    do
+      WEEK=$(( CURRENT_WEEK + INCREMENT ))
+      showweek $WEEK $OPTIONS
+    done
+  elif [ $(echo "$1" | grep "^\([0-9][0-9]\)*[0-9]\{2\}-[0-9]\{2\}-[0-9]\{2\}$") ]; then
+    DAY=$(gdate -d"$1" +%F)
+    shift
+    OPTIONS=$@
+    showday $DAY $OPTIONS
+  elif [ "$1" = "today" ]; then
+    DAY=$(gdate +%F)
+    shift
+    OPTIONS=$@
+    showday $DAY $OPTIONS
+  elif [[ "$1" == ad* ]] || [[ "$1" == de* ]] || [[ "$1" == mo* ]] || [[ "$1" == an* ]] || [[ "$1" == ap* ]] || [[ "$1" == ed* ]] ||  [[ "$1" == do* ]] || [[ "$1" == du* ]]
+  then
+    echo "do not use modifying commands in calendar view !"
+  else
+    WEEK=$(date +%V)
+    OPTIONS=$@
+    showweek $WEEK $OPTIONS
+  fi
+else
+  WEEK=$(date +%V)
+  showweek $WEEK ""
+fi
+
