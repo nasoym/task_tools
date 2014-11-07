@@ -1,0 +1,9 @@
+#!/bin/bash
+if [ "$#" -ge 2 ]; then
+  : ${MODS:=''}
+  PROJECT=$1
+  shift
+  task add $@ proj:$PROJECT +w $MODS
+else
+  echo "need at least two parameters"
+fi

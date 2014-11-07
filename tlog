@@ -1,0 +1,55 @@
+#!/bin/bash
+if [ "$#" -ge 2 ] && [[ "$1" =~ ^[0-9]+$ ]];then
+  TASK_ID=$1
+  SPENT=$2
+  if [ "$#" -ge 3 ]; then
+    DATE=$3
+  else
+    DATE=$(date +%F)
+  fi
+  NEW_TIMELOG_FILED=$(task $TASK_ID export | jq -r '.timelog//[]' | jq -r -c ". += [{date:\"$DATE\",spent:$SPENT,entry:\"$(date +%FT%T)\"}]")
+  task $TASK_ID mo timelog:"$(echo "$NEW_TIMELOG_FILED")"
+elif [ "$1" = "report" ]; then
+  shift
+  IFS=$'\n'
+  IFS=${IFS:0:1}
+  if [ "$#" -ge 1 ] && [[ "$1" =~ ^[0-9]+$ ]];then
+    DAYS_TO_SHOW=$1
+    shift
+  else
+    DAYS_TO_SHOW=3
+  fi
+  DATA=$(task timelog.not: $@ export)
+  ALL_ENTRIES='[]'
+  TIME_ENTRIES='[]'
+  for JSON in $DATA; do
+    JSON=$(echo "$JSON" | sed 's/,$//g')
+    JSON=$(echo "$JSON" | jq -c '.timelog=(.timelog|fromjson)')
+    #echo "$JSON" | jq -r '"\(.id) \(.timelog|fromjson|.)"'
+    ALL_ENTRIES=$(echo "$ALL_ENTRIES" | jq -c ". +=[$JSON]")
+    #TIME_ENTRIES=$(echo "$TIME_ENTRIES" | jq -c ". +=.timelog")
+    JSON_TIME_LOG=$(echo "$JSON" | jq -r -c ".timelog[] += {id:.id, description:.description,uuid:.uuid}|.timelog")
+    TIME_ENTRIES=$(echo "$TIME_ENTRIES" | jq -c ". +=$JSON_TIME_LOG")
+    #echo "$JSON"
+  done
+  #echo "$ALL_ENTRIES"
+  #echo "$TIME_ENTRIES"
+  TIME_ENTRIES=$(echo "$TIME_ENTRIES" | jq -c 'group_by(.date)')
+  TIME_ENTRIES=$(echo "$TIME_ENTRIES" | jq -c ".[-$DAYS_TO_SHOW:]")
+  #echo "$TIME_ENTRIES"
+
+  echo "$TIME_ENTRIES" |\
+  jq -r -c ".[] | \
+\"\(.[0].date)\",\
+(sort_by(.id) | .[] |\
+\"    \(.id): \(.spent)\t'\(.description)' \(.entry//\"\")\
+\"\
+),\
+\"        \([.[] | .spent] | add)\"\
+"
+  echo "$( date +%F)  is today"
+
+
+else
+  echo "!"
+fi

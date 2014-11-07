@@ -1,0 +1,112 @@
+#!/bin/bash
+
+set -e
+
+INDENT_SPACES="  "
+SHOW_FROM_JSON_CONTENT=0
+
+function show_task_with_children() {
+  local UUID=$1
+  local SPACES=$2
+  echo -n "$SPACES"
+  task rc.verbose:nothing $UUID next
+  local CHILD_UUIDS=$(task ancestor:$UUID _uuids)
+  for CHILD_UUID in $CHILD_UUIDS;do
+    show_task_with_children $CHILD_UUID "$SPACES$INDENT_SPACES"
+  done
+}
+
+
+function print_task_report() {
+  local UUID=$1
+  local INDENT=$2
+  local JSON=$(task $UUID status.not:deleted export)
+
+  if [ -n "$JSON" ];then
+    for (( I=0; I<$INDENT; I++ )); do 
+      echo -n " " 
+    done
+
+    STATUS=$(echo "$JSON" | jq -r '.status')
+    ISSUE=$(echo "$JSON" | jq -r '.issue//""')
+    #echo -n ">$STATUS<"
+    #echo -n ">$ISSUE<"
+    if [ "$STATUS" = "completed" ];then
+      tput setaf 1
+    elif [ "$STATUS" = "deleted" ];then
+      :
+    elif [ -n "$ISSUE" ];then
+      tput setaf 3
+    fi
+    #for ((I=0;I<$INDENT;I++));do echo -n " "; done
+
+    echo "$JSON" | jq -r -c "\
+\"\
+\(if (.id==0) then (.uuid|.[0:index(\"-\")]) else .id end)\
+\(if (.issue != null) then \" (\(.issue))\" else \"\" end)\
+ [\(.best//\"\"),\(.likely//\"\"),\(.worst//\"\")\
+\(if (.timelog != null) then \"=\([.timelog|fromjson|.[]|.spent]|add)\" else \"\" end)\
+]\
+ \(.description)\
+\(if (.deliverable!=null) then \"\n$(for ((I=0;I<$INDENT;I++));do echo -n " "; done)   deliver: \(.deliverable)\" else \"\" end)\
+\(if (.casebest!=null) then \"\n$(for ((I=0;I<$INDENT;I++));do echo -n " "; done)   bestcase: \(.casebest)\" else \"\" end)\
+\(if (.caseworst!=null) then \"\n$(for ((I=0;I<$INDENT;I++));do echo -n " "; done)   worstcase: \(.caseworst)\" else \"\" end)\
+\(if (.annotations!=null) then \"\n$(for ((I=0;I<$INDENT;I++));do echo -n " "; done)   \(.annotations)\" else \"\" end)\
+\"" \
+    | sed -e "s/^\(.\{$(( $(tput cols) - INDENT ))\}\).*$/\1/g"
+    tput sgr0
+  fi
+}
+
+function show_task_with_dependencies() {
+  local UUID=$1
+  local INDENT=$2
+  if [ "$SHOW_FROM_JSON_CONTENT" = 1 ];then
+    print_task_report $UUID $INDENT
+  else
+    task rc.verbose:nothing rc.indent.report=$INDENT $UUID status.not:deleted all
+  fi
+  local DEPENDING_UUIDS=$(task _get $UUID.depends | tr ',' '\n')
+  for DEPEND_UUID in $DEPENDING_UUIDS;do
+    #echo ">$DEPEND_UUID<"
+    show_task_with_dependencies $DEPEND_UUID $(( INDENT + 3))
+  done
+}
+
+if [ "$1" = "json" ]; then
+  shift
+  SHOW_FROM_JSON_CONTENT=1
+elif [ "$1" = "add" ] && [ "$#" -ge 3 ]; then
+  shift
+  BLOCKED_TASK_ID=$1
+  shift
+  : ${MODS:=''}
+  PROJECT=$(task $BLOCKED_TASK_ID export | jq -r '.project//""')
+  NEW_TASK_ID=$(task add $@ proj:$PROJECT $MODS | sed 's/^.*task \([0-9]*\)\.$/\1/g')
+  task $BLOCKED_TASK_ID mo depends:$NEW_TASK_ID
+  exit
+
+elif [ "$1" = "move" ] && [ "$#" -ge 3 ]; then
+  shift
+  TASK_ID=$1
+  NEW_PARENT_ID=$2
+  if [ "$#" -ge 3 ];then
+    OLD_PARENT_ID=$3
+  else
+    TASK_UUID=$(task $TASK_ID _uuid)
+    OLD_PARENT_ID=$(task depends.has:$TASK_UUID id)
+  fi
+  if [ -n "$OLD_PARENT_ID" ];then
+    task $OLD_PARENT_ID modify depends:-$TASK_ID
+  fi
+  task $NEW_PARENT_ID modify depends:$TASK_ID
+  exit
+
+fi
+
+UUIDS=$(task status:pending $@ _uuids)
+for UUID in $UUIDS;do
+  #show_task_with_children $UUID
+  show_task_with_dependencies $UUID 0
+done
+
