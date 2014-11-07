@@ -73,23 +73,14 @@ OPTIONS=""
 : ${TASKW_REPORT:=todo}
 : ${COLORS:=1}
 
-# example tcal -f -- -1 +w
-PARSED_OPTIONS=""
-while getopts "f" options; do
-  PARSED_OPTIONS="${PARSED_OPTIONS} -${options}${OPTARG}"
-  case $options in
-    f )
-        TASKW_REPORT=finished
-        COLORS=0
-        ;;
-   \? ) 
-        exit 1
-        ;;
-  esac
-done
-shift $(( OPTIND - 1 ));
-
 if [ "$#" -ge 1 ]; then
+
+  if [ "$1" = "finished" ];then
+    TASKW_REPORT=finished
+    COLORS=0
+    shift
+  fi
+
   if [ $(echo "$1" | grep "^[0-9]*$") ]; then
     WEEK=$1
     shift
