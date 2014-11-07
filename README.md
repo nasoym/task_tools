@@ -1,4 +1,4 @@
-# Task Calendar
+# Task Tools
 
-this repository cotains a command line which should enable to organize tasks
-in a calendar view.
+this repository contains mainly bash command line tools which should
+provide hierchay and calendar reports for task warrior tasks. 
