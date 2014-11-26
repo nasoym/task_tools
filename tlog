@@ -7,7 +7,12 @@ if [ "$#" -ge 2 ] && [[ "$1" =~ ^[0-9]+$ ]];then
   else
     DATE=$(date +%F)
   fi
-  NEW_TIMELOG_FILED=$(task $TASK_ID export | jq -r '.timelog//[]' | jq -r -c ". += [{date:\"$DATE\",spent:$SPENT,entry:\"$(date +%FT%T)\"}]")
+  if [ "$#" -ge 4 ]; then
+    ENTRY_DATE_TIME="${DATE}T$4"
+  else
+    ENTRY_DATE_TIME=$(date +%FT%T)
+  fi
+  NEW_TIMELOG_FILED=$(task $TASK_ID export | jq -r '.timelog//[]' | jq -r -c ". += [{date:\"$DATE\",spent:$SPENT,entry:\"$ENTRY_DATE_TIME\"}]")
   task $TASK_ID mo timelog:"$(echo "$NEW_TIMELOG_FILED")"
 elif [ "$1" = "report" ]; then
   shift
@@ -41,7 +46,7 @@ elif [ "$1" = "report" ]; then
   echo "$TIME_ENTRIES" |\
   jq -r -c ".[] | \
 \"\(.[0].date)\",\
-(sort_by(.id) | .[] |\
+(sort_by(.entry) | .[] |\
 \"    \(.id): \(.spent)\t'\(.description)' \(.entry//\"\")\
 \"\
 ),\
