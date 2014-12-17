@@ -134,6 +134,7 @@ elif [ "$1" = "add" ] && [ "$#" -ge 3 ]; then
   $(task $BLOCKED_TASK_ID export | jq -r -c '.tags | if (index("w")!=null) then "+w" else "" end') \
   | sed 's/^.*task \([0-9]*\)\.$/\1/g')
   task $BLOCKED_TASK_ID mo depends:$NEW_TASK_ID
+  echo "$NEW_TASK_ID"
   exit
 
 elif [ "$1" = "move" ] && [ "$#" -ge 3 ]; then
