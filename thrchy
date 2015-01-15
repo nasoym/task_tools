@@ -105,7 +105,7 @@ function show_task_with_dependencies() {
   elif [ "$SHOW_TASK_CONTENT" = 1 ];then
     task rc.verbose:nothing rc.indent.report=$INDENT $UUID status.not:deleted all
   fi
-  local DEPENDING_UUIDS=$(task _get $UUID.depends | tr ',' '\n')
+  local DEPENDING_UUIDS=$(task $UUID export | jq -r '.depends' | tr ',' '\n')
   for DEPEND_UUID in $DEPENDING_UUIDS;do
     #echo ">$DEPEND_UUID<"
     ALL_UUIDS+=("$DEPEND_UUID")
