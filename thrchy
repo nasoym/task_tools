@@ -2,7 +2,7 @@
 
 set -e
 
-SHOW_ALL_TASKS=0
+SHOW_CLOSED_TASKS=0
 TASKS=$(task +BLOCKED or +BLOCKING export | jq -s -c '.')
 
 function print_task_json() {
@@ -57,7 +57,7 @@ function show_depends() {
       show_depends $CHILD_UUID $(( INDENT + 3))
     done
   else
-    if [ "$SHOW_ALL_TASKS" = "1" ]; then
+    if [ "$SHOW_CLOSED_TASKS" = "1" ]; then
       local TASK_JSON=$(task $UUID export)
       print_task_json "$TASK_JSON" $INDENT
       for CHILD_UUID in $( echo "$TASK_JSON" | jq -r '.depends//""' |tr ',' '\n')
@@ -68,48 +68,86 @@ function show_depends() {
   fi
 }
 
-if [ "$1" = "add" ] && [ "$#" -ge 3 ]; then
-  shift
-  BLOCKED_TASK_ID=$1
-  shift
-  : ${MODS:=''}
-  PROJECT=$(task $BLOCKED_TASK_ID export | jq -r '.project//""')
-  NEW_TASK_ID=$(task add $@ proj:$PROJECT $MODS \
-  $(task $BLOCKED_TASK_ID export | jq -r -c '.tags | if (index("w")!=null) then "+w" else "" end') \
-  | sed 's/^.*task \([0-9]*\)\.$/\1/g')
-  task $BLOCKED_TASK_ID mo depends:$NEW_TASK_ID
-  echo "$NEW_TASK_ID"
-  exit
+IDS=()
+OPERATION="PRINT"
 
-elif [ "$1" = "move" ] && [ "$#" -ge 3 ]; then
-  shift
-  TASK_ID=$1
-  NEW_PARENT_ID=$2
-  if [ "$#" -ge 3 ];then
-    OLD_PARENT_ID=$3
+while true;do
+  if [ "$#" -ge 1 ]; then
+
+    if [[ "$1" =~ ^[0-9]*$ ]]; then 
+      IDS+=($1)
+      shift
+
+    elif [ "$1" = "add" ]; then
+      shift
+      OPERATION="ADD"
+
+    elif [ "$1" = "move" ]; then
+      shift
+      OPERATION="MOVE"
+
+    elif [ "$1" = "all" ]; then
+      shift
+      SHOW_CLOSED_TASKS=1
+
+    else 
+      break
+    fi
+  else 
+    break
+  fi
+done
+
+if [ "$OPERATION" = "ADD" ];then
+  echo "add operation"
+  if [ ${#IDS[@]} -ge 1 ];then
+    BLOCKED_TASK_ID=${IDS[0]}
+    : ${MODS:=''}
+    PROJECT=$(task $BLOCKED_TASK_ID export | jq -r '.project//""')
+    NEW_TASK_ID=$(task add $@ proj:$PROJECT $MODS \
+    $(task $BLOCKED_TASK_ID export | jq -r -c '.tags | if (index("w")!=null) then "+w" else "" end') \
+    | sed 's/^.*task \([0-9]*\)\.$/\1/g')
+    task $BLOCKED_TASK_ID mo depends:$NEW_TASK_ID
+    echo "$NEW_TASK_ID"
   else
-    TASK_UUID=$(task $TASK_ID _uuid)
-    OLD_PARENT_ID=$(task depends.has:$TASK_UUID id)
+    echo "need one id to add a new child task"
   fi
-  if [ -n "$OLD_PARENT_ID" ];then
-    task $OLD_PARENT_ID modify depends:-$TASK_ID
-  fi
-  task $NEW_PARENT_ID modify depends:$TASK_ID
   exit
-fi
 
-if [ "$1" = "all" ]; then
-  shift
-  SHOW_ALL_TASKS=1
-fi
+elif [ "$OPERATION" = "MOVE" ];then
+  echo "move operation"
+  if [ ${#IDS[@]} -ge 2 ];then
+    TASK_ID=${IDS[0]}
+    NEW_PARENT_ID=${IDS[1]}
+    if [ "$#" -ge 3 ];then
+      OLD_PARENT_ID=$3
+    else
+      TASK_UUID=$(task $TASK_ID _uuid)
+      OLD_PARENT_ID=$(task depends.has:$TASK_UUID id)
+    fi
+    if [ -n "$OLD_PARENT_ID" ];then
+      task $OLD_PARENT_ID modify depends:-$TASK_ID
+    fi
+    task $NEW_PARENT_ID modify depends:$TASK_ID
+  else
+    echo "need two ids to move reparent a child task"
+  fi
+  exit
 
-#UUIDS=$(task status:pending $@ _uuids)
-UUIDS=$(task $@ _uuids)
-if [ -n "$UUIDS" ]; then
-  for UUID in $UUIDS;do
-    show_depends $UUID 0
-  done
-else
-  echo "no task found for the filters: $@"
+elif [ "$OPERATION" = "PRINT" ];then
+  #UUIDS=$(task status:pending $@ _uuids)
+  if [ ${#IDS[@]} -ge 1 ];then
+    UUIDS=$(task ${IDS[@]} _uuids)
+  else 
+    UUIDS=$(task $@ _uuids)
+  fi
+  if [ -n "$UUIDS" ]; then
+    for UUID in $UUIDS;do
+      show_depends $UUID 0
+    done
+  else
+    echo "no task found for the filters: $@"
+  fi
+
 fi
 
