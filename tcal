@@ -70,7 +70,7 @@ function showweek(){
 }
 
 OPTIONS=""
-: ${TASKW_REPORT:=todo}
+: ${TASKW_REPORT:=tcal}
 : ${COLORS:=1}
 
 if [ "$#" -ge 1 ]; then
