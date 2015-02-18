@@ -87,7 +87,7 @@ if [ "$#" -ge 1 ]; then
     OPTIONS=$@
     showweek $WEEK $OPTIONS
   elif [ $(echo "$1" | grep "^\(+\|-\)[0-9]*$") ]; then
-    CURRENT_WEEK=$(date +%V)
+    CURRENT_WEEK=$(date +%V | sed -e 's/^0//g')
     WEEK_INCREMENT=$( echo "$1" | sed -e 's/\+//g' -e 's/-//g')
     WEEK_INCREMENT_SIGN=$( echo "$1" | sed 's/[0-9]*//g' )
     shift
@@ -117,7 +117,7 @@ if [ "$#" -ge 1 ]; then
     WEEK_INCREMENTS=$(echo "$1" | tr ',' '\n')
     shift
     OPTIONS=$@
-    CURRENT_WEEK=$(date +%V)
+    CURRENT_WEEK=$(date +%V | sed -e 's/^0//g')
     for INCREMENT in $WEEK_INCREMENTS
     do
       WEEK=$(( CURRENT_WEEK + INCREMENT ))
@@ -137,12 +137,12 @@ if [ "$#" -ge 1 ]; then
   then
     echo "do not use modifying commands in calendar view !"
   else
-    WEEK=$(date +%V)
+    WEEK=$(date +%V | sed -e 's/^0//g')
     OPTIONS=$@
     showweek $WEEK $OPTIONS
   fi
 else
-  WEEK=$(date +%V)
+  WEEK=$(date +%V | sed -e 's/^0//g')
   showweek $WEEK ""
 fi
 
