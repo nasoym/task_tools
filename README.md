@@ -39,7 +39,7 @@ This tool shows tasks which are scheduled for the current week.
 
 ### Dependencies:
 
-* gnu date util (on mac os install it via homebrew)
+* gnu date util (on Mac OS X install it via homebrew)
 
 ### Usage
 
