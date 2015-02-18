@@ -41,8 +41,25 @@ Dependencies:
 
 * gnu date util (on mac os install it via homebrew)
 
-* show tasks which are scheduled for the current week 
-  `tcal`
+* Usage: `tcal [week] [..task warrior filters..] [..task warrior report..]
+* Usage Examples:
+    * show tasks which are scheduled for the current week:
+      `tcal`
+    * show tasks which are scheduled for a specific week:
+      `tcal 08`
+      `tcal 08,09,10`
+    * show tasks which are scheduled for current and next week:
+      `tcal +1`
+    * show tasks which are scheduled for previous and current week:
+      `tcal -1`
+    * show tasks which are scheduled for today:
+      `tcal today`
+    * show tasks which are scheduled for a specific date:
+      `tcal 2015-01-01`
+    * any valid task warrior filters can be specified after the optional week specifier:
+      `tcal -1 +tag1 +tag2 proj:name prio:H`
+    * any report can be specified in order to change the output:
+      `tcal +1 minimal`
 
 ## tlog
 
