@@ -113,7 +113,7 @@ function showweek(){
 }
 
 OPTIONS=""
-: ${TASKW_REPORT:=tcal}
+: ${TASKW_REPORT:=""}
 : ${COLORS:=1}
 
 if [ "$#" -ge 1 ]; then
