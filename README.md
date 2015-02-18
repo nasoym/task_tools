@@ -37,7 +37,12 @@ Dependencies:
 
 This tool shows tasks which are scheduled for the current week.
 
-ISSUE: still need to solve an issue due to differences between the bsd date and gnu date utility.
+Dependencies:
+
+* gnu date util (on mac os install it via homebrew)
+
+* show tasks which are scheduled for the current week 
+  `tcal`
 
 ## tlog
 

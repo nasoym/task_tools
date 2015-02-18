@@ -1,5 +1,48 @@
 #!/bin/bash
 
+function setDateUtil() {
+  if [[ "$(uname)" =~ ^Darwin ]]; then 
+    if [ -n "$(which gdate)" ]; then 
+      echo "gdate"
+    else
+      echo "need gnu date: please install via homebrew" 1>&2
+      exit 1
+    fi
+  else
+    echo "date"
+  fi
+}
+
+function getDaysOfWeek() {
+  YEAR=$($DATEUTIL +%Y)
+  WEEK=$1
+
+  OUTPUT_DATE_FORMAT="%F"
+
+  A_DAY_IN_FIRST_WEEK=$($DATEUTIL -d"$YEAR-01-04" +%w)
+  DAYS_BEFORE_THE_DAY=$((( $A_DAY_IN_FIRST_WEEK + 6) % 7 ))
+  MONDAY_IN_FIRST_WEEK=$($DATEUTIL -d"$YEAR-01-04 -$DAYS_BEFORE_THE_DAY days" +%F)
+
+  MONDAY_IN_REQUESTED_WEEK=$($DATEUTIL -d"$MONDAY_IN_FIRST_WEEK $(( 7 * $WEEK - 7 )) days" "+$OUTPUT_DATE_FORMAT")
+  TUESDAY_IN_REQUESTED_WEEK=$($DATEUTIL -d"$MONDAY_IN_FIRST_WEEK $(( 7 * $WEEK - 7 )) days +1 day" "+$OUTPUT_DATE_FORMAT")
+  WEDNESDAY_IN_REQUESTED_WEEK=$($DATEUTIL -d"$MONDAY_IN_FIRST_WEEK $(( 7 * $WEEK - 7 )) days +2 day" "+$OUTPUT_DATE_FORMAT")
+  THURSDAY_IN_REQUESTED_WEEK=$($DATEUTIL -d"$MONDAY_IN_FIRST_WEEK $(( 7 * $WEEK - 7 )) days +3 day" "+$OUTPUT_DATE_FORMAT")
+  FRIDAY_IN_REQUESTED_WEEK=$($DATEUTIL -d"$MONDAY_IN_FIRST_WEEK $(( 7 * $WEEK - 7 )) days +4 day" "+$OUTPUT_DATE_FORMAT")
+  SATURDAY_IN_REQUESTED_WEEK=$($DATEUTIL -d"$MONDAY_IN_FIRST_WEEK $(( 7 * $WEEK - 7 )) days +5 day" "+$OUTPUT_DATE_FORMAT")
+  SUNDAY_IN_REQUESTED_WEEK=$($DATEUTIL -d"$MONDAY_IN_FIRST_WEEK $(( 7 * $WEEK - 7 )) days +6 day" "+$OUTPUT_DATE_FORMAT")
+
+  echo "$MONDAY_IN_REQUESTED_WEEK"
+  echo "$TUESDAY_IN_REQUESTED_WEEK"
+  echo "$WEDNESDAY_IN_REQUESTED_WEEK"
+  echo "$THURSDAY_IN_REQUESTED_WEEK"
+  echo "$FRIDAY_IN_REQUESTED_WEEK"
+  echo "$SATURDAY_IN_REQUESTED_WEEK"
+  echo "$SUNDAY_IN_REQUESTED_WEEK"
+}
+
+
+DATEUTIL=$(setDateUtil)
+
 #CONFIG_OPTIONS="rc.verbose:nothing rc.indent.report:7 rc.column.padding:2 rc.color:off"
 #CONFIG_OPTIONS="rc.verbose:label rc.indent.report:7"
 CONFIG_OPTIONS="rc.verbose:nothing rc.indent.report:9"
@@ -8,26 +51,26 @@ function showday(){
   DAY=$1
   OPTIONS=$2
   #echo ">$DAY<"
-  EPOCHE=$(gdate -d"${DAY}T00:00:00" "+%s")
-  if [ $EPOCHE -lt $(gdate -d"$(gdate +%F)T00:00:00" +%s) ]
+  EPOCHE=$($DATEUTIL -d"${DAY}T00:00:00" "+%s")
+  if [ $EPOCHE -lt $($DATEUTIL -d"$($DATEUTIL +%F)T00:00:00" +%s) ]
   then
     if [ $COLORS -eq 1 ]; then
       tput setaf 0
     fi
-    gdate -d"$DAY" "+%m-%d %a"
+    $DATEUTIL -d"$DAY" "+%m-%d %a"
     task rc.color:off $CONFIG_OPTIONS sch:$DAY $OPTIONS $TASKW_REPORT
     if [ $COLORS -eq 1 ]; then
       tput sgr0
     fi
   else
-    DAY_OF_WEEK=$(gdate -d"$DAY" "+%w")
-    if [ "$DAY" = "$(gdate +%F)" ]
+    DAY_OF_WEEK=$($DATEUTIL -d"$DAY" "+%w")
+    if [ "$DAY" = "$($DATEUTIL +%F)" ]
     then
       if [ $COLORS -eq 1 ]; then
         tput setaf 2
         tput bold
       fi
-      gdate -d"$DAY" "+%m-%d %a"
+      $DATEUTIL -d"$DAY" "+%m-%d %a"
       if [ $COLORS -eq 1 ]; then
         tput sgr0
       fi
@@ -36,7 +79,7 @@ function showday(){
       if [ $COLORS -eq 1 ]; then
         tput setaf 1
       fi
-      gdate -d"$DAY" "+%m-%d %a"
+      $DATEUTIL -d"$DAY" "+%m-%d %a"
       if [ $COLORS -eq 1 ]; then
         tput sgr0
       fi
@@ -44,7 +87,7 @@ function showday(){
       if [ $COLORS -eq 1 ]; then
         tput setaf 2
       fi
-      gdate -d"$DAY" "+%m-%d %a"
+      $DATEUTIL -d"$DAY" "+%m-%d %a"
       if [ $COLORS -eq 1 ]; then
         tput sgr0
       fi
@@ -62,7 +105,7 @@ function showweek(){
   OPTIONS=$2
   echo "Week:  $WEEK"
   task $CONFIG_OPTIONS week:$WEEK sch: $OPTIONS $TASKW_REPORT
-  WEEK_DAYS=$(days_of_week $WEEK)
+  WEEK_DAYS=$(getDaysOfWeek $WEEK)
   for DAY in $WEEK_DAYS
   do
     showday $DAY $OPTIONS
@@ -124,12 +167,12 @@ if [ "$#" -ge 1 ]; then
       showweek $WEEK $OPTIONS
     done
   elif [ $(echo "$1" | grep "^\([0-9][0-9]\)*[0-9]\{2\}-[0-9]\{2\}-[0-9]\{2\}$") ]; then
-    DAY=$(gdate -d"$1" +%F)
+    DAY=$($DATEUTIL -d"$1" +%F)
     shift
     OPTIONS=$@
     showday $DAY $OPTIONS
   elif [ "$1" = "today" ]; then
-    DAY=$(gdate +%F)
+    DAY=$($DATEUTIL +%F)
     shift
     OPTIONS=$@
     showday $DAY $OPTIONS
