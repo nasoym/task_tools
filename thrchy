@@ -3,14 +3,14 @@
 set -e
 
 SHOW_CLOSED_TASKS=0
-TASKS=$(task +BLOCKED or +BLOCKING export | jq -s -c '.')
+TASKS=$(task +BLOCKED or +BLOCKING export | sed -e 's/,$//g' | jq -s -c '.')
 
 function print_task_json() {
   local TASK_JSON=$1
   local INDENT=$2
   echo "$TASK_JSON" | jq -r -c "\"\
 $(for ((I=0;I<$INDENT;I++));do echo -n " "; done)\
-\(if (.id==0) then (.uuid|.[0:index(\"-\")]) else .id end)\
+\(if (.id==0) then (.uuid) else .id end)\
 \(if (.tags != null) then \" \(.tags)\" else \"\" end)\
  '\(.description)'\
 \"" \
@@ -104,9 +104,7 @@ if [ "$OPERATION" = "ADD" ];then
     BLOCKED_TASK_ID=${IDS[0]}
     : ${MODS:=''}
     PROJECT=$(task $BLOCKED_TASK_ID export | jq -r '.project//""')
-    NEW_TASK_ID=$(task add $@ proj:$PROJECT $MODS \
-    $(task $BLOCKED_TASK_ID export | jq -r -c '.tags | if (index("w")!=null) then "+w" else "" end') \
-    | sed 's/^.*task \([0-9]*\)\.$/\1/g')
+    NEW_TASK_ID=$(task add $@ proj:$PROJECT $MODS | sed 's/^.*task \([0-9]*\)\.$/\1/g')
     task $BLOCKED_TASK_ID mo depends:$NEW_TASK_ID
     echo "$NEW_TASK_ID"
   else
