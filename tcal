@@ -45,7 +45,7 @@ DATEUTIL=$(setDateUtil)
 
 #CONFIG_OPTIONS="rc.verbose:nothing rc.indent.report:7 rc.column.padding:2 rc.color:off"
 #CONFIG_OPTIONS="rc.verbose:label rc.indent.report:7"
-CONFIG_OPTIONS="rc.verbose:nothing rc.indent.report:9"
+CONFIG_OPTIONS="rc.verbose:nothing rc.indent.report:9 rc.dateformat:Y-M-D"
 
 function showday(){
   DAY=$1
