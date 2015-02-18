@@ -65,7 +65,6 @@ This tool shows tasks which are scheduled for the current week.
 
 ## tlog
 
-This tool should provide a way to list time which was spent on certain issues.
-
-ISSUE: still need to solve an issue due to differences between the bsd date and gnu date utility.
+Experimental script to store spent time in a custom field.
+and report logged time of the last few days.
 
