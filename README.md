@@ -65,6 +65,6 @@ This tool shows tasks which are scheduled for the current week.
 
 ## tlog
 
-Experimental script to store spent time in a custom field.
+Experimental script to store spent time in a custom field
 and report logged time of the last few days.
 
