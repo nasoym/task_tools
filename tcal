@@ -40,6 +40,11 @@ function getDaysOfWeek() {
   echo "$SUNDAY_IN_REQUESTED_WEEK"
 }
 
+function removeLeadingZero() {
+    WEEKNUMBER=$1
+    echo "$1" | sed -e 's/^0//g'
+}
+
 
 DATEUTIL=$(setDateUtil)
 
@@ -125,12 +130,12 @@ if [ "$#" -ge 1 ]; then
   fi
 
   if [ $(echo "$1" | grep "^[0-9]*$") ]; then
-    WEEK=$1
+    WEEK=$(removeLeadingZero $1)
     shift
     OPTIONS=$@
     showweek $WEEK $OPTIONS
   elif [ $(echo "$1" | grep "^\(+\|-\)[0-9]*$") ]; then
-    CURRENT_WEEK=$(date +%V | sed -e 's/^0//g')
+    CURRENT_WEEK=$(removeLeadingZero $(date +%V))
     WEEK_INCREMENT=$( echo "$1" | sed -e 's/\+//g' -e 's/-//g')
     WEEK_INCREMENT_SIGN=$( echo "$1" | sed 's/[0-9]*//g' )
     shift
@@ -138,14 +143,14 @@ if [ "$#" -ge 1 ]; then
     if [ "$WEEK_INCREMENT_SIGN" = "-" ] && [ -n "$WEEK_INCREMENT" ]; then
       for (( I=$WEEK_INCREMENT; I>0; I-- )); do
         WEEK=$(( CURRENT_WEEK - I ))
-        showweek $WEEK $OPTIONS
+        showweek $(removeLeadingZero $WEEK) $OPTIONS
       done
     fi
     showweek $CURRENT_WEEK $OPTIONS
     if [ "$WEEK_INCREMENT_SIGN" = "+" ] && [ -n "$WEEK_INCREMENT" ]; then
       for (( I=1; I<=$WEEK_INCREMENT; I++ )); do
         WEEK=$(( CURRENT_WEEK + I ))
-        showweek $WEEK $OPTIONS
+        showweek $(removeLeadingZero $WEEK) $OPTIONS
       done
     fi
   elif [ $(echo "$1" | grep "^[0-9]*\(,[0-9]*\)\{1,\}$") ]; then
@@ -154,13 +159,13 @@ if [ "$#" -ge 1 ]; then
     OPTIONS=$@
     for WEEK in $WEEKS
     do
-      showweek $WEEK $OPTIONS
+      showweek $(removeLeadingZero $WEEK) $OPTIONS
     done
   elif [ $(echo "$1" | grep "^\(+\|-\)[0-9]*\(,\(+\|-\)[0-9]*\)\{1,\}$") ]; then
     WEEK_INCREMENTS=$(echo "$1" | tr ',' '\n')
     shift
     OPTIONS=$@
-    CURRENT_WEEK=$(date +%V | sed -e 's/^0//g')
+    CURRENT_WEEK=$(removeLeadingZero $(date +%V))
     for INCREMENT in $WEEK_INCREMENTS
     do
       WEEK=$(( CURRENT_WEEK + INCREMENT ))
@@ -180,12 +185,12 @@ if [ "$#" -ge 1 ]; then
   then
     echo "do not use modifying commands in calendar view !"
   else
-    WEEK=$(date +%V | sed -e 's/^0//g')
+    WEEK=$(removeLeadingZero $(date +%V))
     OPTIONS=$@
     showweek $WEEK $OPTIONS
   fi
 else
-  WEEK=$(date +%V | sed -e 's/^0//g')
+  WEEK=$(removeLeadingZero $(date +%V))
   showweek $WEEK ""
 fi
 
