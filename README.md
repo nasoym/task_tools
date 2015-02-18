@@ -7,7 +7,7 @@ provide hierarchy and calendar reports for task warrior tasks.
 
 This bash script lists tasks arranged by their dependencies (blocking, blocked).
 
-Dependencies:
+### Dependencies:
 
 * [jq](http://stedolan.github.io/jq/).
 
@@ -37,9 +37,11 @@ Dependencies:
 
 This tool shows tasks which are scheduled for the current week.
 
-Dependencies:
+### Dependencies:
 
 * gnu date util (on mac os install it via homebrew)
+
+### Usage
 
 * Usage: `tcal [week] [..task warrior filters..] [..task warrior report..]
 * Usage Examples:
