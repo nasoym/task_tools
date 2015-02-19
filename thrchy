@@ -136,8 +136,10 @@ elif [ "$OPERATION" = "PRINT" ];then
   #UUIDS=$(task status:pending $@ _uuids)
   if [ ${#IDS[@]} -ge 1 ];then
     UUIDS=$(task ${IDS[@]} _uuids)
-  else 
+  elif [ ! -z "$@" ]; then
     UUIDS=$(task $@ _uuids)
+  else 
+    UUIDS=$(task +BLOCKED -BLOCKING _uuids)
   fi
   if [ -n "$UUIDS" ]; then
     for UUID in $UUIDS;do
