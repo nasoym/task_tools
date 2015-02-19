@@ -144,6 +144,7 @@ elif [ "$OPERATION" = "PRINT" ];then
   if [ -n "$UUIDS" ]; then
     for UUID in $UUIDS;do
       show_depends $UUID 0
+      echo
     done
   else
     echo "no task found for the filters: $@"
