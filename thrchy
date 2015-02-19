@@ -137,7 +137,7 @@ elif [ "$OPERATION" = "PRINT" ];then
   if [ ${#IDS[@]} -ge 1 ];then
     UUIDS=$(task ${IDS[@]} _uuids)
   elif [ ! -z "$@" ]; then
-    UUIDS=$(task $@ _uuids)
+    UUIDS=$(task +BLOCKED -BLOCKING $@ _uuids)
   else 
     UUIDS=$(task +BLOCKED -BLOCKING _uuids)
   fi
