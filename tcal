@@ -59,14 +59,8 @@ function showday(){
   EPOCHE=$($DATEUTIL -d"${DAY}T00:00:00" "+%s")
   if [ $EPOCHE -lt $($DATEUTIL -d"$($DATEUTIL +%F)T00:00:00" +%s) ]
   then
-    if [ $COLORS -eq 1 ]; then
-      tput setaf 0
-    fi
     $DATEUTIL -d"$DAY" "+%m-%d %a"
     task rc.color:off $CONFIG_OPTIONS sch:$DAY $OPTIONS $TASKW_REPORT
-    if [ $COLORS -eq 1 ]; then
-      tput sgr0
-    fi
   else
     DAY_OF_WEEK=$($DATEUTIL -d"$DAY" "+%w")
     if [ "$DAY" = "$($DATEUTIL +%F)" ]
