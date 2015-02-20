@@ -15,35 +15,6 @@ $(for ((I=0;I<$INDENT;I++));do echo -n " "; done)\
  '\(.description)'\
 \"" \
   | sed -e "s/^\(.\{$(tput cols)\}\).*$/\1/g"
-
-#    STATUS=$(echo "$JSON" | jq -r '.status')
-#    if [ "$STATUS" = "completed" ];then
-#      tput setaf 1
-#    elif [ "$STATUS" = "deleted" ];then
-#      :
-#    elif [ -n "$ISSUE" ];then
-#      tput setaf 3
-#    fi
-
-
-#\(if (.issue != null) then \" (\(.issue))\" else \"\" end)\
-# [\(.best//\"\"),\(.likely//\"\"),\(.worst//\"\")\
-#\(if (.timelog != null) then \"=\([.timelog|fromjson|.[]|.spent]|add)\" else \"\" end)\
-#]\
-#\(if (.deliverable!=null) then \"\n$(for ((I=0;I<$INDENT;I++));do echo -n " "; done)   deliver: \(.deliverable)\" else \"\" end)\
-#\(if (.casebest!=null) then \"\n$(for ((I=0;I<$INDENT;I++));do echo -n " "; done)   bestcase: \(.casebest)\" else \"\" end)\
-#\(if (.caseworst!=null) then \"\n$(for ((I=0;I<$INDENT;I++));do echo -n " "; done)   worstcase: \(.caseworst)\" else \"\" end)\
-#
-#      ANNOTATIONS=$( echo "$JSON" | jq "if (.annotations!=null) then .annotations else [] end" )
-#      if [ "$ANNOTATIONS" != "[]" ];then
-#        echo "$ANNOTATIONS" | jq "\
-#.[] |\
-#\"$(for ((I=0;I<$INDENT;I++));do echo -n " "; done)     - \(.description)\"\
-#" \
-#        | sed -e 's/^"//g' -e 's/"$//g' \
-#        | sed -e "s/^\(.\{$(( $(tput cols) - INDENT ))\}\).*$/\1/g"
-#      fi
-
 }
 
 function show_depends() {
