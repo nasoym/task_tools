@@ -14,12 +14,16 @@ This bash script lists tasks arranged by their dependencies (blocking, blocked).
 ### Usage
 
 * Listing tasks:
-  `thrchy [ids] [all]`
+  `thrchy [options] [ids]`
     * `ids` are one or more space separated task ids.
-    * The optional parameter `all` lists also completed tasks.
     * Examples: 
         * `thrchy 23`
         * `thrchy 23 34 5`
+    * possible options:
+        * `-a` : show also closed tasks
+        * `-j` : (default) use the exported json to print the tasks
+        * `-r [report name]` : use the task warrior report to show the tasks
+            * if the report only shows pending tasks the `-a` option has no effect
 * Adding new dependent task:
   `thrchy [id] add [..normal task warrior commands..]`
     * `id` is the task id which should depend on the newly created task.
