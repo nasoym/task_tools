@@ -32,6 +32,27 @@ function show_depends() {
   fi
 }
 
+function getOptions() {
+  while getopts "ajr:" options; do
+    case $options in
+      a )
+        SHOW_CLOSED_TASKS=1
+        ;;
+      j )
+        JSON=1
+        ;;
+      r )
+        JSON=0
+        TASK_WARRIOR_REPORT="$OPTARG"
+        ;;
+      \? )
+        exit 1
+        ;;
+    esac
+  done
+  PARSED_OPT_COUNT=$OPTIND
+}
+
 IDS=()
 : ${OPERATION:="PRINT"}
 : ${SHOW_CLOSED_TASKS:=0}
@@ -43,6 +64,9 @@ IDS=()
 \(if (.tags != null) then \" [\(.tags|join(\",\"))]\" else \"\" end)\
 "}
 TASKS=$(task +BLOCKED or +BLOCKING export | sed -e 's/,$//g' | jq -s -c '.')
+
+getOptions $@
+shift $(( PARSED_OPT_COUNT - 1 ));
 
 while true;do
   if [ "$#" -ge 1 ]; then
@@ -58,10 +82,6 @@ while true;do
     elif [ "$1" = "move" ]; then
       shift
       OPERATION="MOVE"
-
-    elif [ "$1" = "all" ]; then
-      shift
-      SHOW_CLOSED_TASKS=1
 
     else 
       break
