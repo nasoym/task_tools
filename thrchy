@@ -76,7 +76,7 @@ IDS=()
 : ${JQ_REPORT:="\
 \(if (.id==0) then (.uuid) else .id end)\
  \(.description)\
-\(if (.tags != null) then \" [\(.tags|join(\",\"))]\" else \"\" end)\
+\(if (.tags != null) then \" \(.tags)\" else \"\" end)\
 "}
 TASKS=$(task +BLOCKED or +BLOCKING export | sed -e 's/,$//g' | jq -s -c '.')
 
