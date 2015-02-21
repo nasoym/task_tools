@@ -10,12 +10,23 @@ $(for ((I=0;I<$INDENT;I++));do echo -n " "; done)$JQ_REPORT\"" \
   | sed -e "s/^\(.\{$(tput cols)\}\).*$/\1/g"
 }
 
+function print_task() {
+  local TASK_UUDI=$1
+  local INDENT=$2
+  CONFIG_OPTIONS="rc.verbose:nothing"
+  task $CONFIG_OPTIONS rc.indent.report:$INDENT $UUID $TASK_WARRIOR_REPORT
+}
+
 function show_depends() {
   local UUID=$1
   local INDENT=$2
   local TASK_JSON=$(echo "$TASKS" | jq -c ".[] | select(.uuid==\"$UUID\")")
   if [ -n "$TASK_JSON" ]; then
-    print_task_json "$TASK_JSON" $INDENT
+    if [ $JSON -eq 1 ]; then
+      print_task_json "$TASK_JSON" $INDENT
+    else
+      print_task $UUID $INDENT
+    fi
     for CHILD_UUID in $( echo "$TASK_JSON" | jq -r '.depends//""' |tr ',' '\n')
     do
       show_depends $CHILD_UUID $(( INDENT + 3))
@@ -23,7 +34,11 @@ function show_depends() {
   else
     if [ "$SHOW_CLOSED_TASKS" = "1" ]; then
       local TASK_JSON=$(task $UUID export)
-      print_task_json "$TASK_JSON" $INDENT
+      if [ $JSON -eq 1 ]; then
+        print_task_json "$TASK_JSON" $INDENT
+      else
+        print_task $UUID $INDENT
+      fi
       for CHILD_UUID in $( echo "$TASK_JSON" | jq -r '.depends//""' |tr ',' '\n')
       do
         show_depends $CHILD_UUID $(( INDENT + 3))
