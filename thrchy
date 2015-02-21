@@ -2,18 +2,11 @@
 
 set -e
 
-SHOW_CLOSED_TASKS=0
-TASKS=$(task +BLOCKED or +BLOCKING export | sed -e 's/,$//g' | jq -s -c '.')
-
 function print_task_json() {
   local TASK_JSON=$1
   local INDENT=$2
   echo "$TASK_JSON" | jq -r -c "\"\
-$(for ((I=0;I<$INDENT;I++));do echo -n " "; done)\
-\(if (.id==0) then (.uuid) else .id end)\
-\(if (.tags != null) then \" \(.tags)\" else \"\" end)\
- '\(.description)'\
-\"" \
+$(for ((I=0;I<$INDENT;I++));do echo -n " "; done)$JQ_REPORT\"" \
   | sed -e "s/^\(.\{$(tput cols)\}\).*$/\1/g"
 }
 
@@ -40,7 +33,16 @@ function show_depends() {
 }
 
 IDS=()
-OPERATION="PRINT"
+: ${OPERATION:="PRINT"}
+: ${SHOW_CLOSED_TASKS:=0}
+: ${JSON:=1}
+: ${TASK_WARRIOR_REPORT:="ls"}
+: ${JQ_REPORT:="\
+\(if (.id==0) then (.uuid) else .id end)\
+ \(.description)\
+\(if (.tags != null) then \" [\(.tags|join(\",\"))]\" else \"\" end)\
+"}
+TASKS=$(task +BLOCKED or +BLOCKING export | sed -e 's/,$//g' | jq -s -c '.')
 
 while true;do
   if [ "$#" -ge 1 ]; then
