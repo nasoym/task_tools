@@ -104,6 +104,19 @@ function showweek(){
   done
 }
 
+function getOptions() {
+  while getopts "r:" options; do
+    case $options in
+      r )
+        TASKW_REPORT="$OPTARG"
+        ;;
+      \? )
+        exit 1
+        ;;
+    esac
+  done
+  PARSED_OPT_COUNT=$OPTIND
+}
 
 DATEUTIL=$(setDateUtil)
 
@@ -114,6 +127,8 @@ CONFIG_OPTIONS="rc.verbose:nothing rc.indent.report:9 rc.dateformat:Y-M-D"
 OPTIONS=""
 : ${TASKW_REPORT:=""}
 : ${COLORS:=1}
+getOptions $@
+shift $(( PARSED_OPT_COUNT - 1 ));
 
 if [ "$#" -ge 1 ]; then
 
