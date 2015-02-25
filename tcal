@@ -45,13 +45,6 @@ function removeLeadingZero() {
     echo "$1" | sed -e 's/^0//g'
 }
 
-
-DATEUTIL=$(setDateUtil)
-
-#CONFIG_OPTIONS="rc.verbose:nothing rc.indent.report:7 rc.column.padding:2 rc.color:off"
-#CONFIG_OPTIONS="rc.verbose:label rc.indent.report:7"
-CONFIG_OPTIONS="rc.verbose:nothing rc.indent.report:9 rc.dateformat:Y-M-D"
-
 function showday(){
   DAY=$1
   OPTIONS=$2
@@ -110,6 +103,13 @@ function showweek(){
     showday $DAY $OPTIONS
   done
 }
+
+
+DATEUTIL=$(setDateUtil)
+
+#CONFIG_OPTIONS="rc.verbose:nothing rc.indent.report:7 rc.column.padding:2 rc.color:off"
+#CONFIG_OPTIONS="rc.verbose:label rc.indent.report:7"
+CONFIG_OPTIONS="rc.verbose:nothing rc.indent.report:9 rc.dateformat:Y-M-D"
 
 OPTIONS=""
 : ${TASKW_REPORT:=""}
