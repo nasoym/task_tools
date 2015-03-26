@@ -20,6 +20,16 @@ function print_task() {
 function show_depends() {
   local UUID=$1
   local INDENT=$2
+  local CURRENT_DEPTH=$3
+  local MAX_DEPTH=$4
+  if [ -z "$CURRENT_DEPTH" ]; then
+    local CURRENT_DEPTH=0
+  fi
+  if [ -n "$MAX_DEPTH" ]; then
+    if [ $CURRENT_DEPTH -ge $MAX_DEPTH ]; then
+      return
+    fi
+  fi
   local TASK_JSON=$(echo "$TASKS" | jq -c ".[] | select(.uuid==\"$UUID\")")
   if [ -n "$TASK_JSON" ]; then
     if [ $JSON -eq 1 ]; then
@@ -29,7 +39,7 @@ function show_depends() {
     fi
     for CHILD_UUID in $( echo "$TASK_JSON" | jq -r '.depends//""' |tr ',' '\n')
     do
-      show_depends $CHILD_UUID $(( INDENT + 3))
+      show_depends $CHILD_UUID $(( INDENT + 3)) $(( CURRENT_DEPTH + 1)) $MAX_DEPTH
     done
   else
     if [ "$SHOW_CLOSED_TASKS" = "1" ]; then
@@ -41,20 +51,23 @@ function show_depends() {
       fi
       for CHILD_UUID in $( echo "$TASK_JSON" | jq -r '.depends//""' |tr ',' '\n')
       do
-        show_depends $CHILD_UUID $(( INDENT + 3))
+        show_depends $CHILD_UUID $(( INDENT + 3)) $(( CURRENT_DEPTH + 1))
       done
     fi
   fi
 }
 
 function getOptions() {
-  while getopts "ajr:" options; do
+  while getopts "ajr:m:" options; do
     case $options in
       a )
         SHOW_CLOSED_TASKS=1
         ;;
       j )
         JSON=1
+        ;;
+      m )
+        MAX_DEPTH_TO_SHOW=$OPTARG
         ;;
       r )
         JSON=0
@@ -71,6 +84,7 @@ function getOptions() {
 IDS=()
 : ${OPERATION:="PRINT"}
 : ${SHOW_CLOSED_TASKS:=0}
+: ${MAX_DEPTH_TO_SHOW:=""}
 : ${JSON:=1}
 : ${TASK_WARRIOR_REPORT:="ls"}
 : ${JQ_REPORT:="\
@@ -149,7 +163,7 @@ elif [ "$OPERATION" = "PRINT" ];then
   fi
   if [ -n "$UUIDS" ]; then
     for UUID in $UUIDS;do
-      show_depends $UUID 0
+      show_depends $UUID 0 0 $MAX_DEPTH_TO_SHOW
       echo
     done
   else
