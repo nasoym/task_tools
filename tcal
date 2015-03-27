@@ -106,6 +106,7 @@ function showweek(){
   done
 }
 
+# add before after weeknumber date option
 function getOptions() {
   while getopts "r:" options; do
     case $options in
