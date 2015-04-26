@@ -57,8 +57,52 @@ function show_depends() {
   fi
 }
 
+function collect_depends() {
+  local UUID=$1
+  local CURRENT_DEPTH=$2
+  local MAX_DEPTH=$3
+  if [ -z "$CURRENT_DEPTH" ]; then
+    local CURRENT_DEPTH=0
+  fi
+  if [ -n "$MAX_DEPTH" ]; then
+    if [ $CURRENT_DEPTH -gt $MAX_DEPTH ]; then
+      return
+    fi
+  fi
+  local TASK_JSON=$(echo "$TASKS" | jq -c ".[] | select(.uuid==\"$UUID\")")
+  if [ -n "$TASK_JSON" ]; then
+    echo "$UUID"
+    for CHILD_UUID in $( echo "$TASK_JSON" | jq -r '.depends//""' |tr ',' '\n')
+    do
+      collect_depends $CHILD_UUID $(( CURRENT_DEPTH + 1)) $MAX_DEPTH
+    done
+  else
+    if [ "$SHOW_CLOSED_TASKS" = "1" ]; then
+      local TASK_JSON=$(task $UUID export)
+      echo "$UUID"
+      for CHILD_UUID in $( echo "$TASK_JSON" | jq -r '.depends//""' |tr ',' '\n')
+      do
+        collect_depends $CHILD_UUID $(( CURRENT_DEPTH + 1))
+      done
+    fi
+  fi
+}
+
+function getUuids() {
+  ARGUMENTS=$@
+  if [ ${#IDS[@]} -ge 1 ];then
+    task ${IDS[@]} _uuids
+  else 
+    if [ "$ARGUMENTS" = "" ];then
+      task +BLOCKED -BLOCKING _uuids
+    else 
+      task +BLOCKED $@ _uuids
+    fi
+  fi
+}
+
 function getOptions() {
-  while getopts "ajr:m:" options; do
+  while getopts "ajr:d:" options; do
     case $options in
       a )
         SHOW_CLOSED_TASKS=1
@@ -66,7 +110,7 @@ function getOptions() {
       j )
         JSON=1
         ;;
-      m )
+      d )
         MAX_DEPTH_TO_SHOW=$OPTARG
         ;;
       r )
@@ -103,6 +147,10 @@ while true;do
     if [[ "$1" =~ ^[0-9]*$ ]]; then 
       IDS+=($1)
       shift
+
+    elif [ "$1" = "col" ]; then
+      shift
+      OPERATION="COLLECT"
 
     elif [ "$1" = "add" ]; then
       shift
@@ -154,13 +202,18 @@ elif [ "$OPERATION" = "MOVE" ];then
   fi
   exit
 
+elif [ "$OPERATION" = "COLLECT" ];then
+  UUIDS=$(getUuids $@)
+  if [ -n "$UUIDS" ]; then
+    COLLECTED_UUIDS=$(for UUID in $UUIDS;do
+      collect_depends $UUID 0 $MAX_DEPTH_TO_SHOW
+    done)
+    echo "$(task $COLLECTED_UUIDS _id)" | sed -e 's/^/ /g' | tr -d '\n'
+  fi
+
 elif [ "$OPERATION" = "PRINT" ];then
   #UUIDS=$(task status:pending $@ _uuids)
-  if [ ${#IDS[@]} -ge 1 ];then
-    UUIDS=$(task ${IDS[@]} _uuids)
-  else 
-    UUIDS=$(task +BLOCKED -BLOCKING $@ _uuids)
-  fi
+  UUIDS=$(getUuids $@)
   if [ -n "$UUIDS" ]; then
     for UUID in $UUIDS;do
       show_depends $UUID 0 0 $MAX_DEPTH_TO_SHOW
