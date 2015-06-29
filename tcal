@@ -52,7 +52,7 @@ function showday(){
   EPOCHE=$($DATEUTIL -d"${DAY}T00:00:00" "+%s")
   if [ $EPOCHE -lt $($DATEUTIL -d"$($DATEUTIL +%F)T00:00:00" +%s) ]
   then
-    tput setaf 7
+    tput setaf 6
     $DATEUTIL -d"$DAY" "+%m-%d %a"
     task rc.color:off $CONFIG_OPTIONS sch:$DAY $OPTIONS $TASKW_REPORT
     tput sgr0
