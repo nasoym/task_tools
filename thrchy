@@ -184,21 +184,17 @@ if [ "$OPERATION" = "ADD" ];then
 
 elif [ "$OPERATION" = "MOVE" ];then
   echo "move operation"
-  if [ ${#IDS[@]} -ge 2 ];then
+  if [ ${#IDS[@]} -ge 1 ];then
     TASK_ID=${IDS[0]}
-    NEW_PARENT_ID=${IDS[1]}
-    if [ "$#" -ge 3 ];then
-      OLD_PARENT_ID=$3
-    else
-      TASK_UUID=$(task $TASK_ID _uuid)
-      OLD_PARENT_ID=$(task depends.has:$TASK_UUID id)
-    fi
+    TASK_UUID=$(task $TASK_ID _uuid)
+    OLD_PARENT_ID=$(task depends.has:$TASK_UUID id)
     if [ -n "$OLD_PARENT_ID" ];then
       task $OLD_PARENT_ID modify depends:-$TASK_ID
     fi
-    task $NEW_PARENT_ID modify depends:$TASK_ID
-  else
-    echo "need two ids to move reparent a child task"
+    if [ ${#IDS[@]} -ge 2 ];then
+      NEW_PARENT_ID=${IDS[1]}
+      task $NEW_PARENT_ID modify depends:$TASK_ID
+    fi
   fi
   exit
 
