@@ -128,7 +128,7 @@ DATEUTIL=$(setDateUtil)
 CONFIG_OPTIONS="rc.verbose:nothing rc.indent.report:9 rc.dateformat:Y-M-D"
 
 OPTIONS=""
-: ${TASKW_REPORT:=""}
+: ${TASKW_REPORT:="cal"}
 : ${COLORS:=1}
 getOptions $@
 shift $(( PARSED_OPT_COUNT - 1 ));
