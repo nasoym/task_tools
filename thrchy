@@ -37,7 +37,7 @@ function show_depends() {
     else
       print_task $UUID $INDENT
     fi
-    for CHILD_UUID in $( echo "$TASK_JSON" | jq -r '.depends//""' |tr ',' '\n')
+    for CHILD_UUID in $( echo "$TASK_JSON" | jq -r '.depends[]?//""' )
     do
       show_depends $CHILD_UUID $(( INDENT + 3)) $(( CURRENT_DEPTH + 1)) $MAX_DEPTH
     done
@@ -49,7 +49,7 @@ function show_depends() {
       else
         print_task $UUID $INDENT
       fi
-      for CHILD_UUID in $( echo "$TASK_JSON" | jq -r '.depends//""' |tr ',' '\n')
+      for CHILD_UUID in $( echo "$TASK_JSON" | jq -r '.depends[]?//""' )
       do
         show_depends $CHILD_UUID $(( INDENT + 3)) $(( CURRENT_DEPTH + 1))
       done
@@ -136,7 +136,7 @@ IDS=()
  \(.description)\
 \(if (.tags != null) then \" \(.tags)\" else \"\" end)\
 "}
-TASKS=$(task +BLOCKED or +BLOCKING export | sed -e 's/,$//g' | jq -s -c '.')
+TASKS=$(task +BLOCKED or +BLOCKING export | sed -e 's/,$//g' -e 's/^\[$//g' -e 's/^\]$//g' | jq -s -c '.')
 
 getOptions $@
 shift $(( PARSED_OPT_COUNT - 1 ));
