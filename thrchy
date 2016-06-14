@@ -172,9 +172,7 @@ if [ "$OPERATION" = "ADD" ];then
   echo "add operation"
   if [ ${#IDS[@]} -ge 1 ];then
     BLOCKED_TASK_ID=${IDS[0]}
-    : ${MODS:=''}
-    PROJECT=$(task $BLOCKED_TASK_ID export | jq -r '.project?//""')
-    NEW_TASK_ID=$(task add $@ proj:$PROJECT $MODS | sed 's/^.*task \([0-9]*\)\.$/\1/g')
+    NEW_TASK_ID=$(task add $@ | sed 's/^.*task \([0-9]*\)\.$/\1/g')
     task $BLOCKED_TASK_ID mo depends:$NEW_TASK_ID
     echo "$NEW_TASK_ID"
   else
